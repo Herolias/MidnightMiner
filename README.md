@@ -2,6 +2,10 @@
 
 A CLI tool to automate Midnight Scavenger Hunt browser mining.
 
+## Note
+This is a very experimental tool, use at your own risk. If you encounter any issues, please open an issue on GitHub or write to me on Discord (@herolias).
+
+
 ## Quick Install (Linux/macOS)
 
 You can install the latest version with a single command:
