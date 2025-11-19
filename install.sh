@@ -19,7 +19,7 @@ else
 fi
 
 echo "Downloading latest release from $REPO..."
-DOWNLOAD_URL="https://github.com/$REPO/releases/latest/download/$BINARY_NAME"
+DOWNLOAD_URL="https://github.com/$REPO/releases/download/latest/$BINARY_NAME"
 
 # Download to current directory
 curl -fsSL "$DOWNLOAD_URL" -o "$EXE_NAME"

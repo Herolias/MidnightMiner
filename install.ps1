@@ -4,7 +4,7 @@ $ExeName = "midnight-miner.exe"
 
 Write-Host "--- Midnight Miner Installer ---"
 
-$DownloadUrl = "https://github.com/$Repo/releases/latest/download/$BinaryName"
+$DownloadUrl = "https://github.com/$Repo/releases/download/latest/$BinaryName"
 
 Write-Host "Downloading latest release from $Repo..."
 

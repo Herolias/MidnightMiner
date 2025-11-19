@@ -1,6 +1,6 @@
 # Midnight Miner
 
-A CLI tool to automate Midnight Scavenger Hunt wallet generation and mining.
+A CLI tool to automate Midnight Scavenger Hunt browser mining.
 
 ## Quick Install (Linux/macOS)
 
