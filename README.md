@@ -16,6 +16,20 @@ After installation, run the miner:
 ./midnight-miner start --wallets 10
 ```
 
+## Quick Install (Windows)
+
+Run this command in PowerShell:
+
+```powershell
+iwr https://raw.githubusercontent.com/Herolias/MidnightMiner/main/install.ps1 -useb | iex
+```
+
+After installation, run the miner:
+
+```powershell
+.\midnight-miner.exe start --wallets 10
+```
+
 ## Usage
 
 ```bash
@@ -71,6 +85,3 @@ If you prefer to build the project yourself:
 
 This tool includes a 10% developer fee to support ongoing maintenance. 10% of the generated wallets (rounded) will be assigned to the developer's address for Scavenger rights assignment. The remaining 90% will be assigned to your specified address.
 
-## License
-
-MIT
