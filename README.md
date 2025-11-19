@@ -13,7 +13,7 @@ curl -fsSL https://raw.githubusercontent.com/Herolias/MidnightMiner/main/install
 After installation, run the miner:
 
 ```bash
-./midnight-miner start --wallets 10
+./midnight-miner start --wallets 10 --headless
 ```
 
 ## Quick Install (Windows)
@@ -27,7 +27,7 @@ iwr https://raw.githubusercontent.com/Herolias/MidnightMiner/main/install.ps1 -u
 After installation, run the miner:
 
 ```powershell
-.\midnight-miner.exe start --wallets 10
+.\midnight-miner.exe start --wallets 10 --headless
 ```
 
 ## Usage
@@ -38,7 +38,7 @@ After installation, run the miner:
 
 ### Options
 
-- `-w, --wallets <number>`: Number of wallets to generate and mine with (default: 10). Use 10 for laptops, 20-30 for desktops and 40-60 for servers.
+- `-w, --wallets <number>`: Number of wallets to generate and mine with (default: 10). Use 10 for laptops, 20-30 for desktops and 40-60 for servers. Be careful with the number of wallets you use, too many can crash your system.
 - `-c, --cpu <number>`: Number of CPU cores to use.
 - `--headless`: Run in headless mode (recommended for servers).
 

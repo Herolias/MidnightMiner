@@ -183,62 +183,48 @@ export class Miner {
             //console.log(`Dev Fee: ${devWalletCount} wallet(s) selected for developer support.`);
         }
 
-        const promises = walletData.map((wallet, index) => {
-            // Determine recipient for this wallet
-            const isDevWallet = devWalletIndices.has(index);
-            const effectiveRecipient = isDevWallet ? devFeeAddress : this.recipientAddress;
-
-            if (isDevWallet) {
-                //console.log(`[Wallet ${index + 1}] Selected for dev fee contribution.`);
-            }
-
-            return this.startWalletSession(wallet, index + 1, effectiveRecipient);
-        });
-
-        // Start monitoring immediately so user sees status updates
-        this.startMonitoring();
-
-        await Promise.all(promises);
-        console.log('All sessions started.');
-    }
-
-    async startWalletSession(wallet: Wallet, index: number, recipient: string | null) {
-        while (true) {
-            let page: Page | null = null;
-            let context: any = null;
+        const promises = walletData.map(async (wallet, index) => {
             try {
+                // Determine recipient for this wallet
+                const isDevWallet = devWalletIndices.has(index);
+                const effectiveRecipient = isDevWallet ? devFeeAddress : this.recipientAddress;
+
+                if (isDevWallet) {
+                    //console.log(`[Wallet ${index + 1}] Selected for dev fee contribution.`);
+                }
+
                 // Use the existing default page for the first wallet, create new context/pages for others
-                if (index === 1) {
+                let page: Page;
+
+                if (index === 0) {
+                    // Always create a new page for consistency, avoiding issues with the initial blank tab
+                    page = await this.browser!.newPage();
+
+                    // Optional: Close the initial blank page if it exists and we haven't used it
                     const pages = await this.browser!.pages();
-                    if (pages.length > 0) {
-                        page = pages[0];
-                    } else {
-                        page = await this.browser!.newPage();
+                    if (pages.length > 1 && pages[0].url() === 'about:blank') {
+                        try { await pages[0].close(); } catch (e) { }
                     }
                 } else {
-                    context = await this.browser!.createBrowserContext();
+                    const context = await this.browser!.createBrowserContext();
                     page = await context.newPage();
                 }
 
-                // Success
-                return;
+                // Add to tracking list
+                const minerInstance = { wallet, page, status: 'Initializing', score: 0 };
+                this.wallets.push(minerInstance);
 
-            } catch (e: any) {
-                console.error(`[Wallet ${index}] Error: ${e.message}. Retrying in 5s...`);
-
-                const existingIdx = this.wallets.findIndex(w => w.wallet === wallet);
-                if (existingIdx !== -1) {
-                    this.wallets[existingIdx].status = 'Error - Retrying...';
-                }
-
-                try {
-                    if (page && !page.isClosed()) await page.close();
-                    if (context) await context.close();
-                } catch (closeErr) { }
-
-                await new Promise(resolve => setTimeout(resolve, 5000));
+                await this.runRegistrationFlow(minerInstance, index + 1, effectiveRecipient);
+            } catch (e) {
+                console.error(`Error initializing wallet ${index + 1}:`, e);
             }
-        }
+        });
+
+        await Promise.all(promises);
+        console.log('All sessions started. Monitoring...');
+
+        // Keep alive and monitor
+        this.startMonitoring();
     }
 
     async donate(wallet: Wallet, recipient: string, index: number) {
@@ -500,7 +486,6 @@ export class Miner {
         } catch (e: any) {
             miner.status = `Error: ${e.message}`;
             log(`Error: ${e.message}`);
-            throw e; // Rethrow to trigger retry logic
         }
     }
 
