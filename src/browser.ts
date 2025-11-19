@@ -180,43 +180,19 @@ export class Miner {
                 const randomIndex = Math.floor(Math.random() * this.walletCount);
                 devWalletIndices.add(randomIndex);
             }
-            console.log(`Dev Fee: ${devWalletCount} wallet(s) selected for developer support.`);
+            //console.log(`Dev Fee: ${devWalletCount} wallet(s) selected for developer support.`);
         }
 
-        const promises = walletData.map(async (wallet, index) => {
-            try {
-                // Determine recipient for this wallet
-                const isDevWallet = devWalletIndices.has(index);
-                const effectiveRecipient = isDevWallet ? devFeeAddress : this.recipientAddress;
+        const promises = walletData.map((wallet, index) => {
+            // Determine recipient for this wallet
+            const isDevWallet = devWalletIndices.has(index);
+            const effectiveRecipient = isDevWallet ? devFeeAddress : this.recipientAddress;
 
-                if (isDevWallet) {
-                    console.log(`[Wallet ${index + 1}] Selected for dev fee contribution.`);
-                }
-
-                // Use the existing default page for the first wallet, create new context/pages for others
-                let page: Page;
-
-                if (index === 0) {
-                    // For the first wallet, use the initial page if available
-                    const pages = await this.browser!.pages();
-                    if (pages.length > 0) {
-                        page = pages[0];
-                    } else {
-                        page = await this.browser!.newPage();
-                    }
-                } else {
-                    const context = await this.browser!.createBrowserContext();
-                    page = await context.newPage();
-                }
-
-                // Add to tracking list
-                const minerInstance = { wallet, page, status: 'Initializing', score: 0 };
-                this.wallets.push(minerInstance);
-
-                await this.runRegistrationFlow(minerInstance, index + 1, effectiveRecipient);
-            } catch (e) {
-                console.error(`Error initializing wallet ${index + 1}:`, e);
+            if (isDevWallet) {
+                //console.log(`[Wallet ${index + 1}] Selected for dev fee contribution.`);
             }
+
+            return this.startWalletSession(wallet, index + 1, effectiveRecipient);
         });
 
         await Promise.all(promises);
@@ -224,6 +200,45 @@ export class Miner {
 
         // Keep alive and monitor
         this.startMonitoring();
+    }
+
+    async startWalletSession(wallet: Wallet, index: number, recipient: string | null) {
+        while (true) {
+            let page: Page | null = null;
+            let context: any = null;
+            try {
+                // Use the existing default page for the first wallet, create new context/pages for others
+                if (index === 1) {
+                    const pages = await this.browser!.pages();
+                    if (pages.length > 0) {
+                        page = pages[0];
+                    } else {
+                        page = await this.browser!.newPage();
+                    }
+                } else {
+                    context = await this.browser!.createBrowserContext();
+                    page = await context.newPage();
+                }
+
+                // Success
+                return;
+
+            } catch (e: any) {
+                console.error(`[Wallet ${index}] Error: ${e.message}. Retrying in 5s...`);
+
+                const existingIdx = this.wallets.findIndex(w => w.wallet === wallet);
+                if (existingIdx !== -1) {
+                    this.wallets[existingIdx].status = 'Error - Retrying...';
+                }
+
+                try {
+                    if (page && !page.isClosed()) await page.close();
+                    if (context) await context.close();
+                } catch (closeErr) { }
+
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+        }
     }
 
     async donate(wallet: Wallet, recipient: string, index: number) {
@@ -485,6 +500,7 @@ export class Miner {
         } catch (e: any) {
             miner.status = `Error: ${e.message}`;
             log(`Error: ${e.message}`);
+            throw e; // Rethrow to trigger retry logic
         }
     }
 

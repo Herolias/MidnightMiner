@@ -38,7 +38,7 @@ After installation, run the miner:
 
 ### Options
 
-- `-w, --wallets <number>`: Number of wallets to generate and mine with (default: 1).
+- `-w, --wallets <number>`: Number of wallets to generate and mine with (default: 10). Use 10 for laptops, 20-30 for desktops and 40-60 for servers.
 - `-c, --cpu <number>`: Number of CPU cores to use.
 - `--headless`: Run in headless mode (recommended for servers).
 

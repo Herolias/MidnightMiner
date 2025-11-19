@@ -37,7 +37,7 @@ program
         {
             type: 'input',
             name: 'recipient',
-            message: 'Enter the recipient wallet address for donations (leave empty to skip):',
+            message: 'Enter the recipient wallet address for donations (required). Make sure the address is correct and registered for Scavenger Mine, there is no way to change the address later:',
         }
     ]);
 
