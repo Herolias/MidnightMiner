@@ -13,13 +13,13 @@ curl -fsSL https://raw.githubusercontent.com/Herolias/MidnightMiner/main/install
 After installation, run the miner:
 
 ```bash
-midnight-miner start --wallets 10
+./midnight-miner start --wallets 10
 ```
 
 ## Usage
 
 ```bash
-midnight-miner start [options]
+./midnight-miner start [options]
 ```
 
 ### Options
