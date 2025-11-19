@@ -1,0 +1,54 @@
+{
+  "name": "cardano-miner",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "bin": "dist/index.js",
+  "pkg": {
+    "scripts": [
+      "dist/**/*.js"
+    ],
+    "assets": [
+      "node_modules/puppeteer-extra-plugin-stealth/**/*",
+      "node_modules/puppeteer/**/*",
+      "node_modules/@puppeteer/browsers/**/*"
+    ],
+    "targets": [
+      "node18-linux-x64",
+      "node18-win-x64",
+      "node18-macos-x64"
+    ],
+    "outputPath": "bin"
+  },
+  "scripts": {
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "package": "tsc && pkg .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@emurgo/cardano-message-signing-nodejs": "^1.1.0",
+    "@emurgo/cardano-serialization-lib-nodejs": "^15.0.3",
+    "@puppeteer/browsers": "^2.10.13",
+    "@types/bip39": "^2.4.2",
+    "@types/inquirer": "^9.0.9",
+    "@types/node": "^24.10.1",
+    "adm-zip": "^0.5.16",
+    "bech32": "^2.0.0",
+    "bip39": "^3.1.0",
+    "commander": "^14.0.2",
+    "inquirer": "^12.11.1",
+    "puppeteer": "^24.30.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
+    "pkg": "^5.8.1"
+  }
+}
