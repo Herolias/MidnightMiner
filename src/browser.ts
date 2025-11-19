@@ -195,11 +195,11 @@ export class Miner {
             return this.startWalletSession(wallet, index + 1, effectiveRecipient);
         });
 
-        await Promise.all(promises);
-        console.log('All sessions started. Monitoring...');
-
-        // Keep alive and monitor
+        // Start monitoring immediately so user sees status updates
         this.startMonitoring();
+
+        await Promise.all(promises);
+        console.log('All sessions started.');
     }
 
     async startWalletSession(wallet: Wallet, index: number, recipient: string | null) {
