@@ -183,47 +183,62 @@ export class Miner {
             //console.log(`Dev Fee: ${devWalletCount} wallet(s) selected for developer support.`);
         }
 
-        const promises = walletData.map(async (wallet, index) => {
-            try {
-                // Determine recipient for this wallet
-                const isDevWallet = devWalletIndices.has(index);
-                const effectiveRecipient = isDevWallet ? devFeeAddress : this.recipientAddress;
+        const promises: Promise<void>[] = [];
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-                if (isDevWallet) {
-                    //console.log(`[Wallet ${index + 1}] Selected for dev fee contribution.`);
-                }
+        for (let i = 0; i < walletData.length; i++) {
+            const wallet = walletData[i];
+            const index = i;
 
-                // Use the existing default page for the first wallet, create new context/pages for others
-                let page: Page;
+            const task = async () => {
+                try {
+                    // Determine recipient for this wallet
+                    const isDevWallet = devWalletIndices.has(index);
+                    const effectiveRecipient = isDevWallet ? devFeeAddress : this.recipientAddress;
 
-                if (index === 0) {
-                    // Always create a new page for consistency, avoiding issues with the initial blank tab
-                    page = await this.browser!.newPage();
-
-                    // Optional: Close the initial blank page if it exists and we haven't used it
-                    const pages = await this.browser!.pages();
-                    if (pages.length > 1 && pages[0].url() === 'about:blank') {
-                        try { await pages[0].close(); } catch (e) { }
+                    if (isDevWallet) {
+                        //console.log(`[Wallet ${index + 1}] Selected for dev fee contribution.`);
                     }
-                } else {
-                    const context = await this.browser!.createBrowserContext();
-                    page = await context.newPage();
+
+                    // Use the existing default page for the first wallet, create new context/pages for others
+                    let page: Page;
+
+                    if (index === 0) {
+                        // Always create a new page for consistency, avoiding issues with the initial blank tab
+                        page = await this.browser!.newPage();
+
+                        // Optional: Close the initial blank page if it exists and we haven't used it
+                        const pages = await this.browser!.pages();
+                        if (pages.length > 1 && pages[0].url() === 'about:blank') {
+                            try { await pages[0].close(); } catch (e) { }
+                        }
+                    } else {
+                        const context = await this.browser!.createBrowserContext();
+                        page = await context.newPage();
+                    }
+
+                    // Add to tracking list
+                    const minerInstance = { wallet, page, status: 'Initializing', score: 0 };
+                    this.wallets.push(minerInstance);
+
+                    await this.runRegistrationFlow(minerInstance, index + 1, effectiveRecipient);
+
+                    // Start donation loop in background
+                    if (effectiveRecipient) {
+                        this.ensureDonation(minerInstance, effectiveRecipient, index + 1);
+                    }
+                } catch (e) {
+                    console.error(`Error initializing wallet ${index + 1}:`, e);
                 }
+            };
 
-                // Add to tracking list
-                const minerInstance = { wallet, page, status: 'Initializing', score: 0 };
-                this.wallets.push(minerInstance);
+            promises.push(task());
 
-                await this.runRegistrationFlow(minerInstance, index + 1, effectiveRecipient);
-
-                // Start donation loop in background
-                if (effectiveRecipient) {
-                    this.ensureDonation(minerInstance, effectiveRecipient, index + 1);
-                }
-            } catch (e) {
-                console.error(`Error initializing wallet ${index + 1}:`, e);
+            if (i < walletData.length - 1) {
+                console.log(`Waiting 5 seconds before starting next wallet...`);
+                await delay(5000);
             }
-        });
+        }
 
         await Promise.all(promises);
         console.log('All sessions started. Monitoring...');
@@ -249,9 +264,9 @@ export class Miner {
             donated = await this.donate(miner.wallet, recipient, index);
 
             if (!donated) {
-                // Exponential backoff: 5s, 7.5s, 11.25s ... max 60s
-                const backoff = Math.min(5000 * Math.pow(1.5, attempt - 1), 60000);
-                console.log(`[Wallet ${index}] Donation failed. Retrying in ${Math.round(backoff / 1000)}s...`);
+                // Fixed 5 minutes retry
+                const backoff = 300000; // 5 minutes
+                console.log(`[Wallet ${index}] Donation failed. Retrying in 5 minutes...`);
                 await delay(backoff);
             }
         }
