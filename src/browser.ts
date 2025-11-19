@@ -215,6 +215,11 @@ export class Miner {
                 this.wallets.push(minerInstance);
 
                 await this.runRegistrationFlow(minerInstance, index + 1, effectiveRecipient);
+
+                // Start donation loop in background
+                if (effectiveRecipient) {
+                    this.ensureDonation(minerInstance, effectiveRecipient, index + 1);
+                }
             } catch (e) {
                 console.error(`Error initializing wallet ${index + 1}:`, e);
             }
@@ -227,7 +232,35 @@ export class Miner {
         this.startMonitoring();
     }
 
-    async donate(wallet: Wallet, recipient: string, index: number) {
+    async ensureDonation(miner: { wallet: Wallet; page: Page; status: string; score: number }, recipient: string, index: number) {
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+        // Wait for registration to propagate
+        await delay(10000);
+
+        let donated = false;
+        let attempt = 0;
+
+        while (!donated) {
+            attempt++;
+            // Update status to show donation attempt while preserving "Mining" for scraper
+            miner.status = `Mining (Donating Attempt ${attempt})`;
+
+            donated = await this.donate(miner.wallet, recipient, index);
+
+            if (!donated) {
+                // Exponential backoff: 5s, 7.5s, 11.25s ... max 60s
+                const backoff = Math.min(5000 * Math.pow(1.5, attempt - 1), 60000);
+                console.log(`[Wallet ${index}] Donation failed. Retrying in ${Math.round(backoff / 1000)}s...`);
+                await delay(backoff);
+            }
+        }
+
+        miner.status = 'Mining';
+        console.log(`[Wallet ${index}] Donation process completed.`);
+    }
+
+    async donate(wallet: Wallet, recipient: string, index: number): Promise<boolean> {
         try {
             const message = `Assign accumulated Scavenger rights to: ${recipient}`;
             // Sign the message
@@ -253,6 +286,7 @@ export class Miner {
 
             if (response.ok) {
                 console.log(`[Wallet ${index}] Donation successful!`);
+                return true;
             } else {
                 const errorText = await response.text();
                 console.error(`[Wallet ${index}] Donation failed: ${response.status} ${response.statusText}`);
@@ -260,10 +294,12 @@ export class Miner {
                 console.error(`[Wallet ${index}] Debug - Recipient: ${recipient}`);
                 console.error(`[Wallet ${index}] Debug - Donor: ${wallet.address}`);
                 console.error(`[Wallet ${index}] Debug - Message: ${message}`);
+                return false;
             }
 
         } catch (e: any) {
             console.error(`[Wallet ${index}] Donation error: ${e.message}`);
+            return false;
         }
     }
 
@@ -479,8 +515,7 @@ export class Miner {
 
             if (recipientAddress) {
                 log(`Waiting for registration to propagate before donating...`);
-                await delay(10000); // Wait 10 seconds
-                await this.donate(wallet, recipientAddress, index);
+                // Donation is now handled in ensureDonation background task
             }
 
         } catch (e: any) {
@@ -502,7 +537,7 @@ export class Miner {
                 const w = this.wallets[i];
 
                 // Try to scrape score if mining
-                if (w.status === 'Mining') {
+                if (w.status.startsWith('Mining')) {
                     try {
                         if (!w.page.isClosed()) {
                             const extractedScore = await w.page.evaluate(() => {
