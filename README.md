@@ -5,6 +5,8 @@ A CLI tool to automate Midnight Scavenger Hunt browser mining.
 ## Note
 This is a very experimental tool, use at your own risk. If you encounter any issues, please open an issue on GitHub or write to me on Discord (@herolias).
 
+Make absolutly sure to enter a working donation adress. It will throw an error otherwhise and mining will be wasted. Restarting the miner overrides already generated wallets
+
 
 ## Quick Install (Linux/macOS)
 
